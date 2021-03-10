@@ -148,3 +148,109 @@ fs = firstSpecies first middle last refl refl refl refl
 -- Incorrect first species counterpoint
 -- fs' : FirstSpecies
 -- fs' = firstSpecies first' middle' last' refl refl refl refl
+
+------------------------------------------------
+
+-- Second Species
+
+PitchInterval2 : Set
+PitchInterval2 = Pitch × Interval × Interval
+
+strongBeat : PitchInterval2 → PitchInterval
+strongBeat (p , i , _) = p , i
+
+weakBeat : PitchInterval2 → PitchInterval
+weakBeat (p , _ , i) = p , i
+
+expandPitchInterval2 : PitchInterval2 → List PitchInterval
+expandPitchInterval2 (p , i , j) = (p , i) ∷ (p , j) ∷ []
+
+expandPitchIntervals2 : List PitchInterval2 → List PitchInterval
+expandPitchIntervals2 = concatMap expandPitchInterval2
+
+------------------------------------------------
+
+-- Beginning must be the 5th or 8th
+data BeginningError2 : Set where
+  not58    : PitchInterval → BeginningError2
+
+checkBeginning2 : PitchInterval → Maybe BeginningError2
+checkBeginning2 pi@(_ , i) =
+  if ((i == per5) ∨ (i == per8))
+  then nothing
+  else just (not58 pi)
+
+checkEnding2 : List PitchInterval2 → PitchInterval → Maybe EndingError
+checkEnding2 []           _   = just (tooShort [])
+checkEnding2 (p ∷ [])     q   = endingCheck (weakBeat p) q
+checkEnding2 (_ ∷ p ∷ ps) q   = checkEnding2 (p ∷ ps) q
+
+------------------------------------------------
+
+-- Strong beats must be consonant and non-unison
+checkStrongBeats : List PitchInterval2 → List IntervalError
+checkStrongBeats = checkIntervals ∘ map strongBeat
+
+------------------------------------------------
+
+-- Weak beats may be dissonant or unison
+checkWeakBeat : PitchInterval2 → Pitch → Maybe IntervalError
+checkWeakBeat (p , i , j) q with isConsonant j | isUnison j 
+checkWeakBeat (p , i , j) q | false | _ =
+  if isPassingTone (secondPitch (p , i)) (secondPitch (p , j)) q
+  then nothing
+  else just (dissonant j)
+checkWeakBeat (p , i , j) q | _ | true =
+  if isOppositeStep (secondPitch (p , i)) (secondPitch (p , j)) q
+  then nothing
+  else just (unison p)
+checkWeakBeat (p , i , j) q | _ | _    =
+  nothing
+ 
+checkWeakBeats : List PitchInterval2 → Pitch → List IntervalError
+checkWeakBeats []            p = []
+checkWeakBeats pis@(_ ∷ qis) p =
+  mapMaybe (uncurry checkWeakBeat)
+           (zip pis
+                (map (λ {(q , i , j) → proj₂ (pitchIntervalToPitchPair (q , i))}) qis ++ (p ∷ [])))
+
+------------------------------------------------
+
+-- Perfect intervals on strong beats must not be approached by parallel or similar motion
+checkMotion2 : List PitchInterval → List MotionError
+checkMotion2 []           = []
+checkMotion2 (_ ∷ [])     = []
+checkMotion2 (p ∷ q ∷ ps) = checkMotion (p ∷ q ∷ []) ++ checkMotion2 ps
+
+------------------------------------------------
+
+-- Correct second species counterpoint
+record SecondSpecies : Set where
+  constructor secondSpecies
+  field
+    firstBar      : PitchInterval -- require counterpont to start with a rest, which is preferred
+    middleBars    : List PitchInterval2
+    lastBar       : PitchInterval -- require counterpoint to end with only a single whole note, which is preferred
+    beginningOk   : checkBeginning2 firstBar ≡ nothing
+    strongBeatsOk : checkStrongBeats middleBars ≡ []
+    weakBeatsOk   : checkWeakBeats middleBars (secondPitch lastBar) ≡ []
+    motionOk      : checkMotion2 (firstBar ∷ (expandPitchIntervals2 middleBars)) ≡ []
+    endingOk      : checkEnding2 middleBars lastBar ≡ nothing
+
+
+------------------------------------------------
+
+-- Second species counterpoint for Frog's Song (musical content)
+first2 : PitchInterval
+first2 = (c 5 , per5)
+
+middle2 : List PitchInterval2 
+middle2 = (d 5 , min3 , per5) ∷ (e 5 , min3 , min6) ∷ (f 5 , maj3 , aug4) ∷
+          (e 5 , min6 , per1) ∷ (d 5 , min3 , maj6) ∷ []
+
+last2 : PitchInterval
+last2 = (c 5 , per8)
+
+-- Correct second species counterpoint
+ss : SecondSpecies
+ss = secondSpecies first2 middle2 last2 refl refl refl refl refl
