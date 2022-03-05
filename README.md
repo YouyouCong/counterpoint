@@ -1,6 +1,6 @@
 # counterpoint
 
-Agda code for my poster presentation at PPL 2021 (joint work with John Leo).
+Code and posters for my PPL presentations.
 
 There are two related videos on YouTube:
 
