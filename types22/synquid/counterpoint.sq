@@ -1,0 +1,160 @@
+-- Formalization of first-species counterpoint
+
+-- A Pitch is a note within an octave (in C)
+data Pitch where
+  C   :: Pitch
+  Cis :: Pitch
+  D   :: Pitch
+  Dis :: Pitch
+  E   :: Pitch
+  F   :: Pitch
+  Fis :: Pitch
+  G   :: Pitch
+  Gis :: Pitch
+  A   :: Pitch
+  Ais :: Pitch
+  H   :: Pitch
+  C2  :: Pitch
+
+-- Pitches as integers
+measure p2i :: Pitch -> Int where
+  C   -> 1
+  Cis -> 2
+  D   -> 3
+  Dis -> 4
+  E   -> 5
+  F   -> 6
+  Fis -> 7
+  G   -> 8
+  Gis -> 9
+  A   -> 10
+  Ais -> 11
+  H   -> 12
+  C2  -> 13
+
+-- An Interval represents the distance between two pitches
+data Interval where
+  Uni  :: Interval
+  Min2 :: Interval
+  Maj2 :: Interval
+  Min3 :: Interval
+  Maj3 :: Interval
+  Per4 :: Interval
+  Aug4 :: Interval
+  Per5 :: Interval
+  Min6 :: Interval
+  Maj6 :: Interval
+  Min7 :: Interval
+  Maj7 :: Interval
+  Oct  :: Interval
+
+-- Intervals as offsets
+measure offset :: Interval -> Int where
+  Uni  -> 0
+  Min2 -> 1
+  Maj2 -> 2
+  Min3 -> 3
+  Maj3 -> 4
+  Per4 -> 5
+  Aug4 -> 6
+  Per5 -> 7
+  Min6 -> 8
+  Maj6 -> 9
+  Min7 -> 10
+  Maj7 -> 11
+  Oct  -> 12
+
+-- Each bar of counterpoint is a pitch-interval pair
+data PI where
+  Pair :: Pitch -> Interval -> PI
+
+-- Extract pitch from PI
+measure pitch :: PI -> Pitch where
+  Pair p i -> p
+
+-- Extract interval from PI
+measure interval :: PI -> Interval where
+  Pair p i -> i
+
+-- Lists of PI pairs
+data PIs where
+  Nil :: PIs
+  Cons :: PI -> PIs -> PIs
+
+-- Length of PIs
+measure len :: PIs -> {Int | _v >= 0} where
+  Nil -> 0
+  Cons pi pis -> 1 + len pis
+
+-- Head of PIs
+measure head :: PIs -> PI where
+  Nil -> Pair C Uni
+  Cons pi pis -> pi
+
+-- Tail of PIs
+measure tail :: PIs -> PIs where
+  Nil -> Nil
+  Cons pi pis -> pis
+
+-- Drop last element
+measure droplast :: PIs -> PIs where
+  Nil -> Nil
+  Cons pi pis ->
+    if (pis == Nil) then Nil
+    else Cons pi (droplast pis)
+
+-- Body of PIs
+measure body :: PIs -> PIs where
+  Nil -> Nil
+  Cons pi pis -> droplast pis
+
+-- Last two pairs of PIs
+measure last2 :: PIs -> PIs where
+  Nil -> Cons (Pair C Uni) (Cons (Pair C Uni) Nil)
+  Cons pi pis ->
+    if (len pis == 2) then pis
+    else last2 pis
+
+-- Whether an interval is consonant or not
+measure isConsonant :: Interval -> Bool where
+  Uni  -> True
+  Min2 -> False
+  Maj2 -> False
+  Min3 -> True
+  Maj3 -> True
+  Per4 -> False
+  Aug4 -> False
+  Per5 -> True
+  Min6 -> True
+  Maj6 -> True
+  Min7 -> False
+  Maj7 -> False
+  Oct  -> True
+
+-- Whether all intervals are consonant or not
+measure intervalOK :: PIs -> Bool where
+  Nil -> True
+  Cons pi pis -> (isConsonant (interval pi)) && intervalOK pis
+
+-- Whether the piece is free from direct fifth / octave
+measure motionOK :: PIs -> Bool where
+  Nil -> True
+  Cons pi pis ->
+    if (pis == Nil) then True
+    else if -- both lines go up
+            (p2i (pitch (head pis)) - p2i (pitch pi) > 0 &&
+            (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) > 0) ||
+            -- both lines go down
+            (p2i (pitch (head pis)) - p2i (pitch pi) < 0 &&
+            (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) < 0)
+         -- second interval cannot be a perfect one
+         then (interval (head pis) != Per5) && (interval (head pis) != Oct) && motionOK pis
+         else motionOK pis
+
+-- Counterpoint
+type CP = {PIs | intervalOK _v && motionOK _v}
+
+-- Example of CP
+frog :: CP
+frog = Cons (Pair C Oct) (Cons (Pair D Maj6) (Cons (Pair E ??) (Cons (Pair F ??) (Cons (Pair E ??) (Cons (Pair D Maj6) (Cons (Pair C Oct) Nil))))))
+-- frog = Cons (Pair C Oct) (Cons (Pair D Maj6) (Cons (Pair E Maj3) (Cons (Pair F Min3) (Cons (Pair E Min6) (Cons (Pair D Maj6) (Cons (Pair C Oct) Nil))))))
