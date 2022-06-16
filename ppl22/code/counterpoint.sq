@@ -133,9 +133,9 @@ measure isConsonant :: Interval -> Bool where
   Oct  -> True
 
 -- Whether all intervals are consonant or not
-measure allConsonant :: PIs -> Bool where
+measure intervalOK :: PIs -> Bool where
   Nil -> True
-  Cons pi pis -> (isConsonant (interval pi)) && allConsonant pis
+  Cons pi pis -> (isConsonant (interval pi)) && intervalOK pis
 
 -- Whether the piece is free from parallel fifth / octave
 measure motionOK :: PIs -> Bool where
@@ -153,7 +153,7 @@ measure motionOK :: PIs -> Bool where
          else motionOK pis
 
 -- Counterpoint
-type CP = {PIs | allConsonant _v && motionOK _v}
+type CP = {PIs | intervalOK _v && motionOK _v}
 
 -- Example of CP
 frog :: CP
