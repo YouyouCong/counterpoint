@@ -140,16 +140,16 @@ measure intervalOK :: PIs -> Bool where
 measure motionOK :: PIs -> Bool where
   Nil -> True
   Cons pi pis ->
-    if (pis == Nil) then True
-    else if -- both lines go up
-            (p2i (pitch (head pis)) - p2i (pitch pi) > 0 &&
-            (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) > 0) ||
-            -- both lines go down
-            (p2i (pitch (head pis)) - p2i (pitch pi) < 0 &&
-            (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) < 0)
-         -- second interval cannot be a perfect one
-         then (interval (head pis) != Per5) && (interval (head pis) != Oct) && motionOK pis
-         else motionOK pis
+    (pis == Nil) ||
+    if -- both lines go up
+       (p2i (pitch (head pis)) - p2i (pitch pi) > 0 &&
+       (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) > 0) ||
+       -- both lines go down
+       (p2i (pitch (head pis)) - p2i (pitch pi) < 0 &&
+       (p2i (pitch (head pis)) + offset (interval (head pis))) - (p2i (pitch pi) + offset (interval pi)) < 0)
+    -- second interval cannot be a perfect one
+    then (interval (head pis) != Per5) && (interval (head pis) != Oct) && motionOK pis
+    else motionOK pis
 
 -- Counterpoint
 type CP = {PIs | intervalOK _v && motionOK _v}
