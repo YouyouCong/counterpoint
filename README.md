@@ -1,6 +1,6 @@
 # counterpoint
 
-Code and posters for my PPL presentations.
+Materials for my work on counterpoint.
 
 There are two related videos on YouTube:
 
