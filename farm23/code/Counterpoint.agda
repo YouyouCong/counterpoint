@@ -263,15 +263,15 @@ data FS (r₁ : R₁) (r₂ : R₂) : ℤ → Set
 last : {r₁ : R₁} {r₂ : R₂} {z : ℤ} → FS r₁ r₂ z → PI
 
 data FS r₁ r₂ where
-  first : (pi : PI) → FS r₁ r₂ (weight₁ r₁ pi)
+  [_]   : (pi : PI) → FS r₁ r₂ (weight₁ r₁ pi)
   _++_  : {z : ℤ} →
           (cp : FS r₁ r₂ z) → (pi : PI) →
           FS r₁ r₂ (z +ℤ weight₁ r₁ pi +ℤ weight₂ r₂ (last cp) pi)
 
-last (first pi) = pi
+last [ pi ] = pi
 last (cp ++ pi) = pi
 
-infix 40 first
+infix 40 [_]
 infixl 30 _++_
 
 -- Define -∞ as -100 (since Agda does not have ∞ : ℕ)
@@ -294,7 +294,7 @@ infixl 30 _++_
 
 -- Figure 1 left
 fs1 : FS ψ₁ ψ₂ (pos 270)
-fs1 = first (c , oct) ++ (e , min3) ++ (f , maj3) ++ (d , maj6) ++ (c , oct)
+fs1 = [ (c , oct) ] ++ (e , min3) ++ (f , maj3) ++ (d , maj6) ++ (c , oct)
 
 {-
 Rewards and penalties
@@ -311,7 +311,7 @@ bar4-bar5 = 50 (contrary motion)
 
 -- Figure 1 middle
 fs2 : FS ψ₁ ψ₂ (negsuc 59)
-fs2 = first (c , oct) ++ (e , per4) ++ (f , per5) ++ (d , maj6) ++ (c , oct)
+fs2 = [ (c , oct) ] ++ (e , per4) ++ (f , per5) ++ (d , maj6) ++ (c , oct)
 
 {-
 Rewards and penalties
@@ -328,7 +328,7 @@ bar4-bar5 = 50 (contrary motion)
 
 -- Figure 1 right
 fs3 : FS ψ₁ ψ₂ (pos 230)
-fs3 = first (c , oct) ++ (e , min3) ++ (f , min3) ++ (d , maj6) ++ (c , oct)
+fs3 = [ (c , oct) ] ++ (e , min3) ++ (f , min3) ++ (d , maj6) ++ (c , oct)
 
 {-
 Rewards and penalties
